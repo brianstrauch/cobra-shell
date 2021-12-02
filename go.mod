@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/c-bata/go-prompt v0.2.6
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0
 )

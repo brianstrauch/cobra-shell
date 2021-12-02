@@ -9,19 +9,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBuildCompletionArgs_CurrentArg(t *testing.T) {
-	expected := []string{"__complete", "a", "b"}
-	require.Equal(t, expected, buildCompletionArgs("a b"))
+func TestBuildCompletionArgs_Empty(t *testing.T) {
+	args, err := buildCompletionArgs("")
+	require.NoError(t, err)
+
+	expected := []string{"__complete", ""}
+	require.Equal(t, expected, args)
 }
 
-func TestBuildCompletionArgs_Empty(t *testing.T) {
-	expected := []string{"__complete", ""}
-	require.Equal(t, expected, buildCompletionArgs(""))
+func TestBuildCompletionArgs_CurrentArg(t *testing.T) {
+	args, err := buildCompletionArgs("a b")
+	require.NoError(t, err)
+
+	expected := []string{"__complete", "a", "b"}
+	require.Equal(t, expected, args)
+}
+
+func TestBuildCompletionArgs_MultiwordString(t *testing.T) {
+	args, err := buildCompletionArgs(`a "b c"`)
+	require.NoError(t, err)
+
+	expected := []string{"__complete", "a", "b c"}
+	require.Equal(t, expected, args)
 }
 
 func TestBuildCompletionArgs_NextArg(t *testing.T) {
+	args, err := buildCompletionArgs("a b ")
+	require.NoError(t, err)
+
 	expected := []string{"__complete", "a", "b", ""}
-	require.Equal(t, expected, buildCompletionArgs("a b "))
+	require.Equal(t, expected, args)
 }
 
 func TestReadCommandOutput_Stdout(t *testing.T) {

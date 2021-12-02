@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +46,10 @@ func (s *cobraShell) executor(line string) {
 }
 
 func (s *cobraShell) completer(d prompt.Document) []prompt.Suggest {
-	args := buildCompletionArgs(d.CurrentLine())
+	args, err := buildCompletionArgs(d.CurrentLine())
+	if err != nil {
+		return nil
+	}
 
 	out, err := readCommandOutput(s.root, args)
 	if err != nil {
@@ -56,15 +60,15 @@ func (s *cobraShell) completer(d prompt.Document) []prompt.Suggest {
 	return prompt.FilterHasPrefix(suggestions, d.GetWordBeforeCursor(), true)
 }
 
-func buildCompletionArgs(input string) []string {
-	// TODO: Parse args in quotes
-	args := strings.Fields(input)
+func buildCompletionArgs(input string) ([]string, error) {
+	args, err := shlex.Split(input)
 
 	args = append([]string{"__complete"}, args...)
 	if input == "" || input[len(input)-1] == ' ' {
 		args = append(args, "")
 	}
-	return args
+
+	return args, err
 }
 
 func readCommandOutput(cmd *cobra.Command, args []string) (string, error) {
