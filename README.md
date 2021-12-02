@@ -10,6 +10,10 @@ Leverages the Cobra completion API to generate an interactive shell for any [Cob
 * Static and dynamic autocompletion for args and flags, as described [here](https://github.com/spf13/cobra/blob/master/shell_completions.md)
 * Full prompt customizability
 
+## Usage
+
+<img src="https://user-images.githubusercontent.com/7474900/144362981-68bcb984-fbfd-4df5-9194-8d9e92bd65ca.gif" width="50%" />
+
 ## Download
 
 ```
