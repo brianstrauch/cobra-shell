@@ -3,7 +3,6 @@ package main
 import (
 	shell "github.com/brianstrauch/cobra-shell"
 
-	"github.com/c-bata/go-prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +22,7 @@ func main() {
 	})
 
 	cmd.AddCommand(subcommand)
-	cmd.AddCommand(shell.New(cmd, prompt.OptionPrefixTextColor(prompt.Black)))
+	cmd.AddCommand(shell.New(cmd))
 
 	_ = cmd.Execute()
 }

@@ -16,7 +16,7 @@ type cobraShell struct {
 	prompt *prompt.Prompt
 }
 
-// New creates a Cobra CLI command named "shell" which runs an interactive cobraShell prompt for the root command.
+// New creates a Cobra CLI command named "shell" which runs an interactive shell prompt for the root command.
 func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 	shell := &cobraShell{root: root}
 
@@ -28,9 +28,6 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 		shell.completer,
 		opts...,
 	)
-
-	// TODO: Escape special characters in args
-	// TODO: Surround multi-word args in quotes
 
 	return &cobra.Command{
 		Use:   "shell",
@@ -103,13 +100,25 @@ func parseSuggestions(out string) []prompt.Suggest {
 			}
 
 			suggestions = append(suggestions, prompt.Suggest{
-				Text:        x[0],
+				Text:        escapeSpecialCharacters(x[0]),
 				Description: description,
 			})
 		}
 	}
 
 	return suggestions
+}
+
+func escapeSpecialCharacters(val string) string {
+	for _, c := range []string{"\\", "\"", "$", "`", "!"} {
+		val = strings.ReplaceAll(val, c, "\\"+c)
+	}
+
+	if strings.ContainsAny(val, " #&*.;<>?[]|~") {
+		val = fmt.Sprintf(`"%s"`, val)
+	}
+
+	return val
 }
 
 func (s *cobraShell) run(cmd *cobra.Command, _ []string) {

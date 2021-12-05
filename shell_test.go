@@ -106,6 +106,14 @@ Completion ended with directive: ShellCompDirectiveNoFileComp
 	require.Equal(t, expected, parseSuggestions(out))
 }
 
+func TestEscapeSpecialCharacters_Spaces(t *testing.T) {
+	require.Equal(t, `"string with spaces"`, escapeSpecialCharacters("string with spaces"))
+}
+
+func TestEscapeSpecialCharacters_All(t *testing.T) {
+	require.Equal(t, "\\\\\\\"\\$\\`\\!", escapeSpecialCharacters("\\\"$`!"))
+}
+
 func TestEditCommandTree_RemoveShell(t *testing.T) {
 	root := &cobra.Command{}
 	shell := &cobra.Command{Use: "shell"}
