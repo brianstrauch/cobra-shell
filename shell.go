@@ -9,11 +9,13 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 type cobraShell struct {
 	root   *cobra.Command
 	prompt *prompt.Prompt
+	stdin  *term.State
 }
 
 // New creates a Cobra CLI command named "shell" which runs an interactive shell prompt for the root command.
@@ -39,6 +41,10 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 func (s *cobraShell) executor(line string) {
 	args := strings.Fields(line)
 	s.root.SetArgs(args)
+
+	// Allow command to read from stdin
+	s.restoreStdin()
+
 	_ = s.root.Execute()
 }
 
@@ -123,8 +129,11 @@ func escapeSpecialCharacters(val string) string {
 
 func (s *cobraShell) run(cmd *cobra.Command, _ []string) {
 	s.editCommandTree(cmd)
+
+	s.saveStdin()
 	// TODO: Show persistent flags
 	s.prompt.Run()
+	s.restoreStdin()
 }
 
 func (s *cobraShell) editCommandTree(shell *cobra.Command) {
@@ -144,4 +153,18 @@ func (s *cobraShell) editCommandTree(shell *cobra.Command) {
 			os.Exit(0)
 		},
 	})
+}
+
+func (s *cobraShell) saveStdin() {
+	state, err := term.GetState(int(os.Stdin.Fd()))
+	if err != nil {
+		return
+	}
+	s.stdin = state
+}
+
+func (s *cobraShell) restoreStdin() {
+	if s.stdin != nil {
+		_ = term.Restore(int(os.Stdin.Fd()), s.stdin)
+	}
 }
