@@ -78,16 +78,16 @@ func readCommandOutput(cmd *cobra.Command, args []string) (string, error) {
 	buf := new(bytes.Buffer)
 
 	stdout := cmd.OutOrStdout()
-	stderr := cmd.OutOrStderr()
+	stderr := os.Stderr
 
 	cmd.SetOut(buf)
-	cmd.SetErr(buf)
+	_, os.Stderr, _ = os.Pipe()
 
 	cmd.SetArgs(args)
 	err := cmd.Execute()
 
 	cmd.SetOut(stdout)
-	cmd.SetErr(stderr)
+	os.Stderr = stderr
 
 	return buf.String(), err
 }
@@ -96,7 +96,7 @@ func parseSuggestions(out string) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	x := strings.Split(out, "\n")
-	for _, line := range x[:len(x)-3] {
+	for _, line := range x[:len(x)-2] {
 		if line != "" {
 			x := strings.SplitN(line, "\t", 2)
 
