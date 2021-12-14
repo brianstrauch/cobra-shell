@@ -120,7 +120,7 @@ func escapeSpecialCharacters(val string) string {
 		val = strings.ReplaceAll(val, c, "\\"+c)
 	}
 
-	if strings.ContainsAny(val, " #&*.;<>?[]|~") {
+	if strings.ContainsAny(val, " #&*;<>?[]|~") {
 		val = fmt.Sprintf(`"%s"`, val)
 	}
 
