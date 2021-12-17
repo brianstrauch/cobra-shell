@@ -15,12 +15,16 @@ import (
 type cobraShell struct {
 	root   *cobra.Command
 	prompt *prompt.Prompt
+	cache  map[string][]prompt.Suggest
 	stdin  *term.State
 }
 
 // New creates a Cobra CLI command named "shell" which runs an interactive shell prompt for the root command.
 func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
-	shell := &cobraShell{root: root}
+	shell := &cobraShell{
+		root:  root,
+		cache: make(map[string][]prompt.Suggest),
+	}
 
 	prefix := fmt.Sprintf("> %s ", root.Name())
 	opts = append(opts, prompt.OptionPrefix(prefix), prompt.OptionShowCompletionAtStart())
@@ -39,13 +43,14 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 }
 
 func (s *cobraShell) executor(line string) {
-	args := strings.Fields(line)
-	s.root.SetArgs(args)
-
 	// Allow command to read from stdin
 	s.restoreStdin()
 
+	args := strings.Fields(line)
+	s.root.SetArgs(args)
 	_ = s.root.Execute()
+
+	s.cache = make(map[string][]prompt.Suggest)
 }
 
 func (s *cobraShell) completer(d prompt.Document) []prompt.Suggest {
@@ -54,11 +59,19 @@ func (s *cobraShell) completer(d prompt.Document) []prompt.Suggest {
 		return nil
 	}
 
-	out, err := readCommandOutput(s.root, args)
-	if err != nil {
-		return nil
+	// Clear any partial strings to generate all possible completions
+	args[len(args)-1] = ""
+	key := strings.Join(args, " ")
+
+	suggestions, ok := s.cache[key]
+	if !ok {
+		out, err := readCommandOutput(s.root, args)
+		if err != nil {
+			return nil
+		}
+		suggestions = parseSuggestions(out)
+		s.cache[key] = suggestions
 	}
-	suggestions := parseSuggestions(out)
 
 	return prompt.FilterHasPrefix(suggestions, d.GetWordBeforeCursor(), true)
 }
@@ -96,7 +109,11 @@ func parseSuggestions(out string) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	x := strings.Split(out, "\n")
-	for _, line := range x[:len(x)-2] {
+	if len(x) < 3 {
+		return nil
+	}
+
+	for _, line := range x[:len(x)-3] {
 		if line != "" {
 			x := strings.SplitN(line, "\t", 2)
 
