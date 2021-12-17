@@ -13,10 +13,9 @@ import (
 )
 
 type cobraShell struct {
-	root   *cobra.Command
-	prompt *prompt.Prompt
-	cache  map[string][]prompt.Suggest
-	stdin  *term.State
+	root  *cobra.Command
+	cache map[string][]prompt.Suggest
+	stdin *term.State
 }
 
 // New creates a Cobra CLI command named "shell" which runs an interactive shell prompt for the root command.
@@ -29,16 +28,19 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 	prefix := fmt.Sprintf("> %s ", root.Name())
 	opts = append(opts, prompt.OptionPrefix(prefix), prompt.OptionShowCompletionAtStart())
 
-	shell.prompt = prompt.New(
-		shell.executor,
-		shell.completer,
-		opts...,
-	)
-
 	return &cobra.Command{
 		Use:   "shell",
 		Short: "Start an interactive shell.",
-		Run:   shell.run,
+		Run: func(cmd *cobra.Command, _ []string) {
+			shell.editCommandTree(cmd)
+			shell.saveStdin()
+
+			// TODO: Show persistent flags
+			prompt := prompt.New(shell.executor, shell.completer, opts...)
+			prompt.Run()
+
+			shell.restoreStdin()
+		},
 	}
 }
 
@@ -142,15 +144,6 @@ func escapeSpecialCharacters(val string) string {
 	}
 
 	return val
-}
-
-func (s *cobraShell) run(cmd *cobra.Command, _ []string) {
-	s.editCommandTree(cmd)
-
-	s.saveStdin()
-	// TODO: Show persistent flags
-	s.prompt.Run()
-	s.restoreStdin()
 }
 
 func (s *cobraShell) editCommandTree(shell *cobra.Command) {
