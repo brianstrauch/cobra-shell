@@ -79,7 +79,8 @@ func (s *cobraShell) executor(line string) {
 	s.root.SetArgs(args)
 	_ = s.root.Execute()
 
-	s.cache = make(map[string][]prompt.Suggest)
+	rootKey := "__complete "
+	s.cache = map[string][]prompt.Suggest{rootKey: s.cache[rootKey]}
 }
 
 func (s *cobraShell) restoreStdin() {
