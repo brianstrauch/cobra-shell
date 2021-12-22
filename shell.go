@@ -9,6 +9,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"golang.org/x/term"
 )
 
@@ -35,7 +36,6 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 			shell.editCommandTree(cmd)
 			shell.saveStdin()
 
-			// TODO: Show persistent flags
 			prompt := prompt.New(shell.executor, shell.completer, opts...)
 			prompt.Run()
 
@@ -76,8 +76,7 @@ func (s *cobraShell) executor(line string) {
 	s.restoreStdin()
 
 	args := strings.Fields(line)
-	s.root.SetArgs(args)
-	_ = s.root.Execute()
+	_ = execute(s.root, args)
 
 	rootKey := "__complete "
 	s.cache = map[string][]prompt.Suggest{rootKey: s.cache[rootKey]}
@@ -134,13 +133,26 @@ func readCommandOutput(cmd *cobra.Command, args []string) (string, error) {
 	cmd.SetOut(buf)
 	_, os.Stderr, _ = os.Pipe()
 
-	cmd.SetArgs(args)
-	err := cmd.Execute()
+	err := execute(cmd, args)
 
 	cmd.SetOut(stdout)
 	os.Stderr = stderr
 
 	return buf.String(), err
+}
+
+func execute(cmd *cobra.Command, args []string) error {
+	cmd.SetArgs(args)
+	err := cmd.Execute()
+
+	// Reset flag values between runs, due to a limitation in Cobra
+	if cmd, _, err := cmd.Find(args); err == nil {
+		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+			_ = flag.Value.Set(flag.DefValue)
+		})
+	}
+
+	return err
 }
 
 func parseSuggestions(out string) []prompt.Suggest {
