@@ -82,7 +82,6 @@ func TestReadCommandOutput_Err(t *testing.T) {
 func TestParseSuggestions_WithDescription(t *testing.T) {
 	out := `command-with-description	description
 :4
-Completion ended with directive: ShellCompDirectiveNoFileComp
 `
 
 	expected := []prompt.Suggest{
@@ -98,7 +97,6 @@ Completion ended with directive: ShellCompDirectiveNoFileComp
 func TestParseSuggestions_WithoutDescription(t *testing.T) {
 	out := `command-without-description
 :4
-Completion ended with directive: ShellCompDirectiveNoFileComp
 `
 
 	expected := []prompt.Suggest{{Text: "command-without-description"}}

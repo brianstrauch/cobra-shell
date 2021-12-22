@@ -44,6 +44,33 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 	}
 }
 
+func (s *cobraShell) editCommandTree(shell *cobra.Command) {
+	s.root.RemoveCommand(shell)
+
+	// Hide the "completion" command
+	if cmd, _, err := s.root.Find([]string{"completion"}); err == nil {
+		// TODO: Remove this command
+		cmd.Hidden = true
+	}
+
+	s.root.AddCommand(&cobra.Command{
+		Use:   "exit",
+		Short: "Exit the interactive shell.",
+		Run: func(*cobra.Command, []string) {
+			// TODO: Exit cleanly without help from the os package
+			os.Exit(0)
+		},
+	})
+}
+
+func (s *cobraShell) saveStdin() {
+	state, err := term.GetState(int(os.Stdin.Fd()))
+	if err != nil {
+		return
+	}
+	s.stdin = state
+}
+
 func (s *cobraShell) executor(line string) {
 	// Allow command to read from stdin
 	s.restoreStdin()
@@ -55,14 +82,22 @@ func (s *cobraShell) executor(line string) {
 	s.cache = make(map[string][]prompt.Suggest)
 }
 
+func (s *cobraShell) restoreStdin() {
+	if s.stdin != nil {
+		_ = term.Restore(int(os.Stdin.Fd()), s.stdin)
+	}
+}
+
 func (s *cobraShell) completer(d prompt.Document) []prompt.Suggest {
 	args, err := buildCompletionArgs(d.CurrentLine())
 	if err != nil {
 		return nil
 	}
 
-	// Clear any partial strings to generate all possible completions
-	args[len(args)-1] = ""
+	if !isFlag(args[len(args)-1]) {
+		// Clear partial strings to generate all possible completions
+		args[len(args)-1] = ""
+	}
 	key := strings.Join(args, " ")
 
 	suggestions, ok := s.cache[key]
@@ -111,11 +146,11 @@ func parseSuggestions(out string) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	x := strings.Split(out, "\n")
-	if len(x) < 3 {
+	if len(x) < 2 {
 		return nil
 	}
 
-	for _, line := range x[:len(x)-3] {
+	for _, line := range x[:len(x)-2] {
 		if line != "" {
 			x := strings.SplitN(line, "\t", 2)
 
@@ -146,35 +181,6 @@ func escapeSpecialCharacters(val string) string {
 	return val
 }
 
-func (s *cobraShell) editCommandTree(shell *cobra.Command) {
-	s.root.RemoveCommand(shell)
-
-	// Hide the "completion" command
-	if cmd, _, err := s.root.Find([]string{"completion"}); err == nil {
-		// TODO: Remove this command
-		cmd.Hidden = true
-	}
-
-	s.root.AddCommand(&cobra.Command{
-		Use:   "exit",
-		Short: "Exit the interactive shell.",
-		Run: func(*cobra.Command, []string) {
-			// TODO: Exit cleanly without help from the os package
-			os.Exit(0)
-		},
-	})
-}
-
-func (s *cobraShell) saveStdin() {
-	state, err := term.GetState(int(os.Stdin.Fd()))
-	if err != nil {
-		return
-	}
-	s.stdin = state
-}
-
-func (s *cobraShell) restoreStdin() {
-	if s.stdin != nil {
-		_ = term.Restore(int(os.Stdin.Fd()), s.stdin)
-	}
+func isFlag(arg string) bool {
+	return strings.HasPrefix(arg, "-")
 }
