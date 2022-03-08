@@ -36,8 +36,7 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 			shell.editCommandTree(cmd)
 			shell.saveStdin()
 
-			prompt := prompt.New(shell.executor, shell.completer, opts...)
-			prompt.Run()
+			prompt.New(shell.executor, shell.completer, opts...).Run()
 
 			shell.restoreStdin()
 		},
@@ -145,10 +144,14 @@ func execute(cmd *cobra.Command, args []string) error {
 	cmd.SetArgs(args)
 	err := cmd.Execute()
 
-	// Reset flag values between runs, due to a limitation in Cobra
+	// Reset flag values between runs due to a limitation in Cobra
 	if cmd, _, err := cmd.Find(args); err == nil {
 		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-			_ = flag.Value.Set(flag.DefValue)
+			if val, ok := flag.Value.(pflag.SliceValue); ok {
+				_ = val.Replace([]string{})
+			} else {
+				_ = flag.Value.Set(flag.DefValue)
+			}
 		})
 	}
 
