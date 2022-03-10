@@ -74,7 +74,7 @@ func (s *cobraShell) executor(line string) {
 	// Allow command to read from stdin
 	s.restoreStdin()
 
-	args := strings.Fields(line)
+	args, _ := shlex.Split(line)
 	_ = execute(s.root, args)
 
 	rootKey := "__complete "
@@ -141,9 +141,6 @@ func readCommandOutput(cmd *cobra.Command, args []string) (string, error) {
 }
 
 func execute(cmd *cobra.Command, args []string) error {
-	cmd.SetArgs(args)
-	err := cmd.Execute()
-
 	// Reset flag values between runs due to a limitation in Cobra
 	if cmd, _, err := cmd.Find(args); err == nil {
 		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
@@ -154,6 +151,9 @@ func execute(cmd *cobra.Command, args []string) error {
 			}
 		})
 	}
+
+	cmd.SetArgs(args)
+	err := cmd.Execute()
 
 	return err
 }
