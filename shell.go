@@ -77,6 +77,12 @@ func (s *cobraShell) executor(line string) {
 	args, _ := shlex.Split(line)
 	_ = execute(s.root, args)
 
+	if cmd, _, err := s.root.Find(args); err == nil {
+		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+			flag.Changed = false
+		})
+	}
+
 	rootKey := "__complete "
 	s.cache = map[string][]prompt.Suggest{rootKey: s.cache[rootKey]}
 }
@@ -153,9 +159,7 @@ func execute(cmd *cobra.Command, args []string) error {
 	}
 
 	cmd.SetArgs(args)
-	err := cmd.Execute()
-
-	return err
+	return cmd.Execute()
 }
 
 func parseSuggestions(out string) []prompt.Suggest {
