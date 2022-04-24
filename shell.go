@@ -60,6 +60,16 @@ func (s *cobraShell) editCommandTree(shell *cobra.Command) {
 			os.Exit(0)
 		},
 	})
+
+	initDefaultHelpFlag(s.root)
+}
+
+func initDefaultHelpFlag(cmd *cobra.Command) {
+	cmd.InitDefaultHelpFlag()
+
+	for _, subcommand := range cmd.Commands() {
+		initDefaultHelpFlag(subcommand)
+	}
 }
 
 func (s *cobraShell) saveStdin() {
@@ -141,8 +151,8 @@ func readCommandOutput(cmd *cobra.Command, args []string) (string, error) {
 }
 
 func execute(cmd *cobra.Command, args []string) error {
-	// Reset flag values between runs due to a limitation in Cobra
 	if cmd, _, err := cmd.Find(args); err == nil {
+		// Reset flag values between runs due to a limitation in Cobra
 		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 			if val, ok := flag.Value.(pflag.SliceValue); ok {
 				_ = val.Replace([]string{})
@@ -150,6 +160,8 @@ func execute(cmd *cobra.Command, args []string) error {
 				_ = flag.Value.Set(flag.DefValue)
 			}
 		})
+
+		cmd.InitDefaultHelpFlag()
 	}
 
 	cmd.SetArgs(args)
