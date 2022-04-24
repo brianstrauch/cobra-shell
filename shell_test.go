@@ -82,25 +82,34 @@ func TestReadCommandOutput_Err(t *testing.T) {
 func TestParseSuggestions_WithDescription(t *testing.T) {
 	out := `command-with-description	description
 :4
-`
-
-	expected := []prompt.Suggest{
-		{
-			Text:        "command-with-description",
-			Description: "description",
-		},
-	}
-
+Completion ended with directive: ShellCompDirectiveNoFileComp`
+	expected := []prompt.Suggest{{Text: "command-with-description", Description: "description"}}
 	require.Equal(t, expected, parseSuggestions(out))
 }
 
 func TestParseSuggestions_WithoutDescription(t *testing.T) {
 	out := `command-without-description
 :4
-`
-
+Completion ended with directive: ShellCompDirectiveNoFileComp`
 	expected := []prompt.Suggest{{Text: "command-without-description"}}
+	require.Equal(t, expected, parseSuggestions(out))
+}
 
+func TestParseSuggestions_HideShorthandFlags(t *testing.T) {
+	out := `--flag	A flag.
+-f	A flag.
+:4
+Completion ended with directive: ShellCompDirectiveNoFileComp`
+	expected := []prompt.Suggest{{Text: "--flag", Description: "A flag."}}
+	require.Equal(t, expected, parseSuggestions(out))
+}
+
+func TestParseSuggestions_Sort(t *testing.T) {
+	out := `b
+a
+:4
+Completion ended with directive: ShellCompDirectiveNoFileComp`
+	expected := []prompt.Suggest{{Text: "a"}, {Text: "b"}}
 	require.Equal(t, expected, parseSuggestions(out))
 }
 

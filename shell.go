@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
@@ -179,20 +180,23 @@ func parseSuggestions(out string) []prompt.Suggest {
 	}
 
 	for _, line := range x[:len(x)-2] {
-		if line != "" {
-			x := strings.SplitN(line, "\t", 2)
+		x := strings.SplitN(line, "\t", 2)
 
-			var description string
-			if len(x) > 1 {
-				description = x[1]
-			}
-
-			suggestions = append(suggestions, prompt.Suggest{
-				Text:        escapeSpecialCharacters(x[0]),
-				Description: description,
-			})
+		if isShorthandFlag(x[0]) {
+			continue
 		}
+
+		suggestion := prompt.Suggest{Text: escapeSpecialCharacters(x[0])}
+		if len(x) > 1 {
+			suggestion.Description = x[1]
+		}
+
+		suggestions = append(suggestions, suggestion)
 	}
+
+	sort.Slice(suggestions, func(i, j int) bool {
+		return suggestions[i].Text < suggestions[j].Text
+	})
 
 	return suggestions
 }
@@ -211,4 +215,8 @@ func escapeSpecialCharacters(val string) string {
 
 func isFlag(arg string) bool {
 	return strings.HasPrefix(arg, "-")
+}
+
+func isShorthandFlag(arg string) bool {
+	return isFlag(arg) && !strings.HasPrefix(arg, "--")
 }
