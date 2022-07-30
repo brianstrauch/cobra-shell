@@ -15,16 +15,18 @@ import (
 )
 
 type cobraShell struct {
-	root  *cobra.Command
-	cache map[string][]prompt.Suggest
-	stdin *term.State
+	root    *cobra.Command
+	refresh func() *cobra.Command
+	cache   map[string][]prompt.Suggest
+	stdin   *term.State
 }
 
 // New creates a Cobra CLI command named "shell" which runs an interactive shell prompt for the root command.
-func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
+func New(root *cobra.Command, refresh func() *cobra.Command, opts ...prompt.Option) *cobra.Command {
 	shell := &cobraShell{
-		root:  root,
-		cache: make(map[string][]prompt.Suggest),
+		root:    root,
+		refresh: refresh,
+		cache:   make(map[string][]prompt.Suggest),
 	}
 
 	prefix := fmt.Sprintf("> %s ", root.Name())
@@ -34,9 +36,9 @@ func New(root *cobra.Command, opts ...prompt.Option) *cobra.Command {
 		Use:   "shell",
 		Short: "Start an interactive shell.",
 		Run: func(cmd *cobra.Command, _ []string) {
-			shell.editCommandTree(cmd)
 			shell.saveStdin()
 
+			shell.editCommandTree(cmd)
 			prompt.New(shell.executor, shell.completer, opts...).Run()
 
 			shell.restoreStdin()
@@ -88,14 +90,18 @@ func (s *cobraShell) executor(line string) {
 	args, _ := shlex.Split(line)
 	_ = execute(s.root, args)
 
-	if cmd, _, err := s.root.Find(args); err == nil {
-		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-			flag.Changed = false
-		})
+	if s.refresh != nil {
+		s.root = s.refresh()
+		s.editCommandTree(s.root)
+	} else {
+		if cmd, _, err := s.root.Find(args); err == nil {
+			cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+				flag.Changed = false
+			})
+		}
 	}
 
-	rootKey := "__complete "
-	s.cache = map[string][]prompt.Suggest{rootKey: s.cache[rootKey]}
+	s.cache = make(map[string][]prompt.Suggest)
 }
 
 func (s *cobraShell) restoreStdin() {

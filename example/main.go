@@ -22,7 +22,7 @@ func main() {
 	})
 
 	cmd.AddCommand(subcommand)
-	cmd.AddCommand(shell.New(cmd))
+	cmd.AddCommand(shell.New(cmd, nil))
 
 	_ = cmd.Execute()
 }
