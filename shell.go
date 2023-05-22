@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/c-bata/go-prompt"
+	"github.com/confluentinc/go-prompt"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"

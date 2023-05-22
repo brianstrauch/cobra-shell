@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/c-bata/go-prompt"
+	"github.com/confluentinc/go-prompt"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
