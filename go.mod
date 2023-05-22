@@ -3,7 +3,7 @@ module github.com/brianstrauch/cobra-shell
 go 1.17
 
 require (
-	github.com/confluentinc/go-prompt v0.2.17
+	github.com/confluentinc/go-prompt v0.2.18
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
