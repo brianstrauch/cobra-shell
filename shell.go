@@ -172,6 +172,8 @@ func execute(cmd *cobra.Command, args []string) error {
 			} else {
 				_ = flag.Value.Set(flag.DefValue)
 			}
+
+			_ = cmd.Flags().SetAnnotation(flag.Name, cobra.BashCompOneRequiredFlag, []string{"false"})
 		})
 
 		cmd.InitDefaultHelpFlag()
@@ -212,7 +214,15 @@ func parseSuggestions(out string) []prompt.Suggest {
 			return it < jt
 		}
 
-		return isFlag(jt) || !isFlag(it) || it < jt
+		if isFlag(it) {
+			return false
+		}
+
+		if isFlag(jt) {
+			return true
+		}
+
+		return it < jt
 	})
 
 	return suggestions
