@@ -19,6 +19,7 @@ type cobraShell struct {
 	refresh func() *cobra.Command
 	cache   map[string][]prompt.Suggest
 	stdin   *term.State
+	prompt  *prompt.Prompt
 }
 
 // New creates a Cobra CLI command named "shell" which runs an interactive shell prompt for the root command.
@@ -39,7 +40,8 @@ func New(root *cobra.Command, refresh func() *cobra.Command, opts ...prompt.Opti
 			shell.saveStdin()
 
 			shell.editCommandTree(cmd)
-			prompt.New(shell.executor, shell.completer, opts...).Run()
+			(*shell).prompt = prompt.New(shell.executor, shell.completer, opts...)
+			shell.prompt.Run()
 
 			shell.restoreStdin()
 		},
@@ -63,6 +65,24 @@ func (s *cobraShell) editCommandTree(shell *cobra.Command) {
 			os.Exit(0)
 		},
 	})
+
+	// add 'history' command
+	var bIsClear, bNoPager *bool
+	cmdHistory := cobra.Command{
+		Use:   "history",
+		Short: "Show shell command history",
+		Run: func(*cobra.Command, []string) {
+			if *bIsClear {
+				s.prompt.History().DeleteAll()
+			} else {
+				s.prompt.History().List(!(*bNoPager))
+			} // end if
+		},
+	}
+	bIsClear = cmdHistory.Flags().BoolP("clear", "c", false, "clear history")
+	bNoPager = cmdHistory.Flags().Bool("no-pager", false, "do not pipe output into a pager")
+	cmdHistory.MarkFlagsMutuallyExclusive("clear", "no-pager")
+	s.root.AddCommand(&cmdHistory)
 
 	initDefaultHelpFlag(s.root)
 }
