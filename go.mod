@@ -1,6 +1,6 @@
 module github.com/brianstrauch/cobra-shell
 
-go 1.23.0
+go 1.23
 
 require (
 	github.com/c-bata/go-prompt v0.2.6
