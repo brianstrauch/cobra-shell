@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/c-bata/go-prompt v0.2.6
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/term v0.37.0
